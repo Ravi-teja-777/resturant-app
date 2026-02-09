@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Orders - Admin{% endblock %}
+
+{% block content %}
+<section class="dashboard-header admin-header">
+    <div class="container">
+        <h1>📋 All Orders</h1>
+        <p>View and manage customer orders</p>
+    </div>
+</section>
+
+<section class="dashboard-section">
+    <div class="container">
+        <div class="mb-3">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Order History</h2>
+            </div>
+            <div class="table-responsive">
+                {% if orders %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Total</th>
+                            <th>Phone</th>
+                            <th>Location</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td><code>{{ order.order_id[:8] }}</code></td>
+                            <td>{{ order.customer_name }}</td>
+                            <td><strong>{{ order.item_name }}</strong></td>
+                            <td>{{ order.quantity }}</td>
+                            <td><strong>₹{{ order.total_price }}</strong></td>
+                            <td>{{ order.customer_phone }}</td>
+                            <td>
+                                <small>{{ order.location[:30] }}...</small>
+                                {% if order.special_instructions %}
+                                <br><em class="text-muted">Note: {{ order.special_instructions[:30] }}</em>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ order.created_at[:16] }}</small></td>
+                            <td>
+                                <span class="order-status status-{{ order.status }}">
+                                    {{ order.status.title() }}
+                                </span>
+                            </td>
+                            <td class="action-buttons">
+                                {% if order.status == 'pending' %}
+                                <button class="btn btn-sm btn-success" 
+                                        onclick="updateOrderStatus('{{ order.order_id }}', 'accepted')">
+                                    ✓ Accept
+                                </button>
+                                <button class="btn btn-sm btn-danger" 
+                                        onclick="updateOrderStatus('{{ order.order_id }}', 'rejected')">
+                                    ✗ Reject
+                                </button>
+                                {% elif order.status == 'accepted' %}
+                                <button class="btn btn-sm btn-primary" 
+                                        onclick="updateOrderStatus('{{ order.order_id }}', 'completed')">
+                                    ✓ Complete
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-sm btn-danger" 
+                                        onclick="deleteOrder('{{ order.order_id }}')">
+                                    🗑️
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <p>No orders yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function updateOrderStatus(orderId, status) {
+    if (!confirm(`Are you sure you want to ${status} this order?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/order/update/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: status })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to update order');
+        }
+    } catch (error) {
+        alert('Network error. Please try again.');
+    }
+}
+
+async function deleteOrder(orderId) {
+    if (!confirm('Are you sure you want to delete this order?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/order/delete/${orderId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.error || 'Delete failed');
+        }
+    } catch (error) {
+        alert('Network error. Please try again.');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Ravi Teja's Restaurant{% endblock %}
+
+{% block content %}
+<section class="dashboard-header admin-header">
+    <div class="container">
+        <h1>🔐 Admin Dashboard</h1>
+        <p>Manage your restaurant operations</p>
+    </div>
+</section>
+
+<section class="dashboard-section">
+    <div class="container">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card stat-primary">
+                <div class="stat-icon">📦</div>
+                <div class="stat-details">
+                    <h3>{{ stats.total_orders or 0 }}</h3>
+                    <p>Total Orders</p>
+                </div>
+            </div>
+            <div class="stat-card stat-warning">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-details">
+                    <h3>{{ stats.pending_orders or 0 }}</h3>
+                    <p>Pending Orders</p>
+                </div>
+            </div>
+            <div class="stat-card stat-success">
+                <div class="stat-icon">✅</div>
+                <div class="stat-details">
+                    <h3>{{ stats.accepted_orders or 0 }}</h3>
+                    <p>Accepted Orders</p>
+                </div>
+            </div>
+            <div class="stat-card stat-info">
+                <div class="stat-icon">🍽️</div>
+                <div class="stat-details">
+                    <h3>{{ stats.total_menu_items or 0 }}</h3>
+                    <p>Menu Items</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <a href="{{ url_for('admin_menu') }}" class="btn btn-primary">
+                <span>➕ Add Menu Item</span>
+            </a>
+            <a href="{{ url_for('admin_orders') }}" class="btn btn-secondary">
+                <span>📋 View All Orders</span>
+            </a>
+            <a href="{{ url_for('admin_menu') }}" class="btn btn-info">
+                <span>🍽️ Manage Menu</span>
+            </a>
+        </div>
+
+        <!-- Pending Orders -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>⏳ Pending Orders</h2>
+            </div>
+            <div class="table-responsive">
+                {% if pending_orders %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Item</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Phone</th>
+                            <th>Location</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in pending_orders %}
+                        <tr>
+                            <td><code>{{ order.order_id[:8] }}</code></td>
+                            <td>{{ order.customer_name }}</td>
+                            <td><strong>{{ order.item_name }}</strong></td>
+                            <td>{{ order.quantity }}</td>
+                            <td><strong>₹{{ order.total_price }}</strong></td>
+                            <td>{{ order.customer_phone }}</td>
+                            <td><small>{{ order.location[:30] }}...</small></td>
+                            <td><small>{{ order.created_at[:16] }}</small></td>
+                            <td class="action-buttons">
+                                <button class="btn btn-sm btn-success" 
+                                        onclick="updateOrderStatus('{{ order.order_id }}', 'accepted')">
+                                    ✓ Accept
+                                </button>
+                                <button class="btn btn-sm btn-danger" 
+                                        onclick="updateOrderStatus('{{ order.order_id }}', 'rejected')">
+                                    ✗ Reject
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <p>No pending orders at the moment</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function updateOrderStatus(orderId, status) {
+    if (!confirm(`Are you sure you want to ${status} this order?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/order/update/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: status })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to update order status');
+        }
+    } catch (error) {
+        alert('Network error. Please try again.');
+    }
+}
+</script>
+{% endblock %}

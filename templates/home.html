@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Ravi Teja's Restaurant{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-content">
+        <h1 class="hero-title">Welcome to Ravi Teja's Restaurant</h1>
+        <p class="hero-subtitle">Experience the finest authentic cuisine in Vijayawada</p>
+        <div class="hero-buttons">
+            <a href="{{ url_for('menu_page') }}" class="btn btn-primary btn-large">View Menu</a>
+            {% if not session.user_id %}
+                <a href="{{ url_for('signup_page') }}" class="btn btn-secondary btn-large">Sign Up Now</a>
+            {% else %}
+                {% if session.role == 'admin' %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary btn-large">Go to Dashboard</a>
+                {% else %}
+                    <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary btn-large">Order Now</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    <div class="hero-overlay"></div>
+</section>
+
+<!-- Features Section -->
+<section class="features">
+    <div class="container">
+        <h2 class="section-title">Why Choose Us?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🍳</div>
+                <h3>Fresh Ingredients</h3>
+                <p>We use only the freshest ingredients sourced daily from local markets</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👨‍🍳</div>
+                <h3>Expert Chefs</h3>
+                <p>Our experienced chefs bring authentic flavors to every dish</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3>Fast Delivery</h3>
+                <p>Quick and reliable delivery to your doorstep</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⭐</div>
+                <h3>Quality Service</h3>
+                <p>Exceptional customer service and dining experience</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Popular Dishes Section -->
+<section class="popular-dishes">
+    <div class="container">
+        <h2 class="section-title">Popular Dishes</h2>
+        <p class="section-subtitle">Taste our customer favorites</p>
+        <div class="dishes-grid">
+            <div class="dish-preview">
+                <div class="dish-image-placeholder">🍛</div>
+                <h3>Biryani Special</h3>
+                <p>Aromatic basmati rice with tender meat</p>
+            </div>
+            <div class="dish-preview">
+                <div class="dish-image-placeholder">🍗</div>
+                <h3>Chicken Tikka</h3>
+                <p>Grilled chicken with special spices</p>
+            </div>
+            <div class="dish-preview">
+                <div class="dish-image-placeholder">🥘</div>
+                <h3>Paneer Butter Masala</h3>
+                <p>Creamy cottage cheese curry</p>
+            </div>
+            <div class="dish-preview">
+                <div class="dish-image-placeholder">🍜</div>
+                <h3>Dal Tadka</h3>
+                <p>Tempered lentils with aromatic spices</p>
+            </div>
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('menu_page') }}" class="btn btn-primary">View Full Menu</a>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <h2>Ready to Order?</h2>
+        <p>Join thousands of satisfied customers and enjoy delicious food today!</p>
+        {% if not session.user_id %}
+            <a href="{{ url_for('signup_page') }}" class="btn btn-light btn-large">Get Started</a>
+        {% else %}
+            <a href="{{ url_for('user_dashboard') }}" class="btn btn-light btn-large">Order Now</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

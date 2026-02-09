@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Menu - Ravi Teja's Restaurant{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <h1>Our Menu</h1>
+        <p>Explore our delicious selection of dishes</p>
+    </div>
+</section>
+
+<section class="menu-section">
+    <div class="container">
+        <!-- Filter Tabs -->
+        <div class="menu-filters">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="Starters">Starters</button>
+            <button class="filter-btn" data-filter="Main Course">Main Course</button>
+            <button class="filter-btn" data-filter="Breads">Breads</button>
+            <button class="filter-btn" data-filter="Desserts">Desserts</button>
+            <button class="filter-btn" data-filter="Beverages">Beverages</button>
+            <button class="filter-btn" data-filter="veg">🥬 Veg Only</button>
+            <button class="filter-btn" data-filter="non-veg">🍗 Non-Veg</button>
+        </div>
+
+        <!-- Menu Grid -->
+        <div class="menu-grid">
+            {% if menu_items %}
+                {% for item in menu_items %}
+                <div class="menu-card" data-category="{{ item.category }}" data-type="{{ item.dish_type }}">
+                    <div class="menu-card-image">
+                        {% if item.image_url %}
+                            <img src="{{ item.image_url }}" alt="{{ item.name }}" loading="lazy">
+                        {% else %}
+                            <div class="menu-placeholder">🍽️</div>
+                        {% endif %}
+                        <span class="dish-type-badge {{ item.dish_type }}">
+                            {{ '🥬 Veg' if item.dish_type == 'veg' else '🍗 Non-Veg' }}
+                        </span>
+                        {% if not item.available %}
+                            <span class="unavailable-badge">Currently Unavailable</span>
+                        {% endif %}
+                    </div>
+                    <div class="menu-card-content">
+                        <h3 class="menu-card-title">{{ item.name }}</h3>
+                        <p class="menu-card-category">{{ item.category }}</p>
+                        <p class="menu-card-description">{{ item.description }}</p>
+                        <div class="menu-card-footer">
+                            <span class="menu-card-price">₹{{ item.price }}</span>
+                            {% if session.user_id and session.role != 'admin' and item.available %}
+                                <a href="{{ url_for('user_dashboard') }}" class="btn btn-sm btn-primary">Order Now</a>
+                            {% elif not session.user_id and item.available %}
+                                <a href="{{ url_for('login_page') }}" class="btn btn-sm btn-primary">Login to Order</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <h3>No menu items available yet</h3>
+                    <p>Check back soon for delicious dishes!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Menu filtering
+const filterBtns = document.querySelectorAll('.filter-btn');
+const menuCards = document.querySelectorAll('.menu-card');
+
+filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Update active button
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const filter = btn.getAttribute('data-filter');
+        
+        menuCards.forEach(card => {
+            if (filter === 'all') {
+                card.style.display = 'block';
+            } else if (filter === 'veg' || filter === 'non-veg') {
+                if (card.getAttribute('data-type') === filter) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            } else {
+                if (card.getAttribute('data-category') === filter) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

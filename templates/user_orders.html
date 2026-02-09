@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}My Orders - Ravi Teja's Restaurant{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <h1>📋 My Orders</h1>
+        <p>Track your order history</p>
+    </div>
+</section>
+
+<section class="orders-section">
+    <div class="container">
+        <div class="mb-3">
+            <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>Order History</h2>
+            </div>
+            {% if orders %}
+            <div class="orders-list-full">
+                {% for order in orders %}
+                <div class="order-card">
+                    <div class="order-card-header">
+                        <div>
+                            <h3>{{ order.item_name }}</h3>
+                            <p class="order-id">Order #{{ order.order_id[:8] }}</p>
+                        </div>
+                        <span class="order-status status-{{ order.status }}">
+                            {{ order.status.title() }}
+                        </span>
+                    </div>
+                    <div class="order-card-body">
+                        <div class="order-detail-row">
+                            <span class="label">Quantity:</span>
+                            <span>{{ order.quantity }}</span>
+                        </div>
+                        <div class="order-detail-row">
+                            <span class="label">Price per item:</span>
+                            <span>₹{{ order.item_price }}</span>
+                        </div>
+                        <div class="order-detail-row">
+                            <span class="label">Total Amount:</span>
+                            <span class="total-price">₹{{ order.total_price }}</span>
+                        </div>
+                        <div class="order-detail-row">
+                            <span class="label">Delivery Location:</span>
+                            <span>{{ order.location }}</span>
+                        </div>
+                        {% if order.special_instructions %}
+                        <div class="order-detail-row">
+                            <span class="label">Special Instructions:</span>
+                            <span><em>{{ order.special_instructions }}</em></span>
+                        </div>
+                        {% endif %}
+                        <div class="order-detail-row">
+                            <span class="label">Ordered on:</span>
+                            <span>{{ order.created_at[:16] }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <h3>No orders yet</h3>
+                <p>Start ordering delicious food from our menu!</p>
+                <a href="{{ url_for('user_dashboard') }}" class="btn btn-primary mt-2">Browse Menu</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

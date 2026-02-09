@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Menu - Admin{% endblock %}
+
+{% block content %}
+<section class="dashboard-header admin-header">
+    <div class="container">
+        <h1>🍽️ Manage Menu</h1>
+        <p>Add, edit, and remove menu items</p>
+    </div>
+</section>
+
+<section class="dashboard-section">
+    <div class="container">
+        <!-- Add Menu Item Button -->
+        <div class="mb-3">
+            <button class="btn btn-primary" onclick="openAddModal()">➕ Add New Menu Item</button>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+        </div>
+
+        <!-- Menu Items Table -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Menu Items</h2>
+            </div>
+            <div class="table-responsive">
+                {% if menu_items %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Type</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in menu_items %}
+                        <tr>
+                            <td>
+                                {% if item.image_url %}
+                                    <img src="{{ item.image_url }}" alt="{{ item.name }}" class="table-img">
+                                {% else %}
+                                    <div class="table-img-placeholder">🍽️</div>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ item.name }}</strong></td>
+                            <td>{{ item.category }}</td>
+                            <td>
+                                <span class="badge-{{ item.dish_type }}">
+                                    {{ '🥬 Veg' if item.dish_type == 'veg' else '🍗 Non-Veg' }}
+                                </span>
+                            </td>
+                            <td><strong>₹{{ item.price }}</strong></td>
+                            <td>
+                                <span class="status-{{ 'available' if item.available else 'unavailable' }}">
+                                    {{ 'Available' if item.available else 'Unavailable' }}
+                                </span>
+                            </td>
+                            <td class="action-buttons">
+                                <button class="btn btn-sm btn-info" 
+                                        onclick="toggleAvailability('{{ item.item_id }}')">
+                                    {{ '🚫 Disable' if item.available else '✓ Enable' }}
+                                </button>
+                                <button class="btn btn-sm btn-warning" 
+                                        onclick="openEditModal('{{ item.item_id }}')">
+                                    ✏️ Edit
+                                </button>
+                                <button class="btn btn-sm btn-danger" 
+                                        onclick="deleteMenuItem('{{ item.item_id }}')">
+                                    🗑️ Delete
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <p>No menu items yet. Add your first item!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Add/Edit Menu Item Modal -->
+<div id="menuModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2 id="modalTitle">Add Menu Item</h2>
+            <span class="modal-close" onclick="closeMenuModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="menuForm" enctype="multipart/form-data">
+                <input type="hidden" id="itemId" name="item_id">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="itemName">Dish Name *</label>
+                        <input type="text" id="itemName" name="name" required 
+                               class="form-input" placeholder="e.g., Chicken Biryani">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="itemPrice">Price (₹) *</label>
+                        <input type="number" id="itemPrice" name="price" required step="0.01" min="0"
+                               class="form-input" placeholder="e.g., 250">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="category">Category *</label>
+                        <select id="category" name="category" required class="form-input">
+                            <option value="Starters">Starters</option>
+                            <option value="Main Course">Main Course</option>
+                            <option value="Breads">Breads</option>
+                            <option value="Rice">Rice</option>
+                            <option value="Desserts">Desserts</option>
+                            <option value="Beverages">Beverages</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dishType">Type *</label>
+                        <select id="dishType" name="dish_type" required class="form-input">
+                            <option value="veg">🥬 Vegetarian</option>
+                            <option value="non-veg">🍗 Non-Vegetarian</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="3" 
+                              class="form-input" placeholder="Describe the dish..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="itemImage">Dish Image *</label>
+                    <input type="file" id="itemImage" name="image" accept="image/*" 
+                           class="form-input" onchange="previewImage(event)">
+                    <small class="form-hint">PNG, JPG, JPEG, or WEBP (max 16MB)</small>
+                </div>
+
+                <div id="imagePreview" style="display:none; margin-top: 10px;">
+                    <img id="preview" style="max-width: 200px; border-radius: 8px;">
+                </div>
+
+                <div id="menuMessage" class="message"></div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="submitMenuBtn">
+                    <span class="btn-text">Add Item</span>
+                    <span class="btn-loader" style="display: none;">Saving...</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let isEditMode = false;
+
+function openAddModal() {
+    isEditMode = false;
+    document.getElementById('modalTitle').textContent = 'Add Menu Item';
+    document.getElementById('menuForm').reset();
+    document.getElementById('itemId').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('itemImage').required = true;
+    document.getElementById('menuModal').style.display = 'flex';
+    document.querySelector('#submitMenuBtn .btn-text').textContent = 'Add Item';
+}
+
+function openEditModal(itemId) {
+    // In a real implementation, fetch item details and populate form
+    isEditMode = true;
+    document.getElementById('modalTitle').textContent = 'Edit Menu Item';
+    document.getElementById('itemId').value = itemId;
+    document.getElementById('itemImage').required = false;
+    document.getElementById('menuModal').style.display = 'flex';
+    document.querySelector('#submitMenuBtn .btn-text').textContent = 'Update Item';
+}
+
+function closeMenuModal() {
+    document.getElementById('menuModal').style.display = 'none';
+    document.getElementById('menuForm').reset();
+}
+
+function previewImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview').src = e.target.result;
+            document.getElementById('imagePreview').style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+    }
+}
+
+// Menu form submission
+document.getElementById('menuForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const btn = document.getElementById('submitMenuBtn');
+    const btnText = btn.querySelector('.btn-text');
+    const btnLoader = btn.querySelector('.btn-loader');
+    const messageDiv = document.getElementById('menuMessage');
+    
+    const formData = new FormData(e.target);
+    const itemId = document.getElementById('itemId').value;
+    
+    let url = '/api/menu/add';
+    if (isEditMode && itemId) {
+        url = `/api/menu/update/${itemId}`;
+    }
+    
+    // Show loading
+    btn.disabled = true;
+    btnText.style.display = 'none';
+    btnLoader.style.display = 'inline';
+    
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            messageDiv.textContent = data.message;
+            messageDiv.className = 'message message-success';
+            setTimeout(() => {
+                closeMenuModal();
+                location.reload();
+            }, 1500);
+        } else {
+            messageDiv.textContent = data.error || 'Operation failed';
+            messageDiv.className = 'message message-error';
+            btn.disabled = false;
+            btnText.style.display = 'inline';
+            btnLoader.style.display = 'none';
+        }
+    } catch (error) {
+        messageDiv.textContent = 'Network error. Please try again.';
+        messageDiv.className = 'message message-error';
+        btn.disabled = false;
+        btnText.style.display = 'inline';
+        btnLoader.style.display = 'none';
+    }
+});
+
+async function toggleAvailability(itemId) {
+    try {
+        const response = await fetch(`/api/menu/toggle/${itemId}`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.error || 'Operation failed');
+        }
+    } catch (error) {
+        alert('Network error. Please try again.');
+    }
+}
+
+async function deleteMenuItem(itemId) {
+    if (!confirm('Are you sure you want to delete this menu item?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/menu/delete/${itemId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.error || 'Delete failed');
+        }
+    } catch (error) {
+        alert('Network error. Please try again.');
+    }
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('menuModal');
+    if (event.target === modal) {
+        closeMenuModal();
+    }
+}
+</script>
+{% endblock %}

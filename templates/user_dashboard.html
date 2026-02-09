@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}User Dashboard - Ravi Teja's Restaurant{% endblock %}
+
+{% block content %}
+<section class="dashboard-header">
+    <div class="container">
+        <h1>Welcome, {{ username }}! 👋</h1>
+        <p>Browse our menu and place your order</p>
+    </div>
+</section>
+
+<section class="dashboard-section">
+    <div class="container">
+        <div class="dashboard-grid">
+            <!-- Menu Items -->
+            <div class="dashboard-main">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>🍽️ Available Menu</h2>
+                    </div>
+                    
+                    <!-- Category Filters -->
+                    <div class="menu-filters-compact">
+                        <button class="filter-btn-sm active" data-filter="all">All</button>
+                        <button class="filter-btn-sm" data-filter="veg">🥬 Veg</button>
+                        <button class="filter-btn-sm" data-filter="non-veg">🍗 Non-Veg</button>
+                    </div>
+
+                    <div class="menu-list">
+                        {% if menu_items %}
+                            {% for item in menu_items %}
+                            <div class="menu-item" data-type="{{ item.dish_type }}">
+                                <div class="menu-item-image">
+                                    {% if item.image_url %}
+                                        <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                                    {% else %}
+                                        <div class="menu-placeholder-sm">🍽️</div>
+                                    {% endif %}
+                                </div>
+                                <div class="menu-item-details">
+                                    <h3>{{ item.name }} <span class="badge-{{ item.dish_type }}">{{ '🥬' if item.dish_type == 'veg' else '🍗' }}</span></h3>
+                                    <p class="item-category">{{ item.category }}</p>
+                                    <p class="item-description">{{ item.description }}</p>
+                                </div>
+                                <div class="menu-item-actions">
+                                    <div class="item-price">₹{{ item.price }}</div>
+                                    <button class="btn btn-primary btn-sm" onclick="openOrderModal('{{ item.item_id }}', '{{ item.name }}', '{{ item.price }}')">
+                                        Order Now
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state">
+                                <p>No menu items available at the moment</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Orders Sidebar -->
+            <div class="dashboard-sidebar">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📋 Recent Orders</h3>
+                    </div>
+                    <div class="orders-list">
+                        {% if orders %}
+                            {% for order in orders[:5] %}
+                            <div class="order-item-sm">
+                                <div class="order-header-sm">
+                                    <strong>{{ order.item_name }}</strong>
+                                    <span class="order-status status-{{ order.status }}">{{ order.status }}</span>
+                                </div>
+                                <div class="order-details-sm">
+                                    <p>Qty: {{ order.quantity }} | ₹{{ order.total_price }}</p>
+                                    <p class="order-date-sm">{{ order.created_at[:10] }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            <a href="{{ url_for('user_orders') }}" class="btn btn-block btn-secondary btn-sm mt-2">View All Orders</a>
+                        {% else %}
+                            <p class="text-muted">No orders yet. Start ordering!</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Order Modal -->
+<div id="orderModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Place Your Order</h2>
+            <span class="modal-close" onclick="closeOrderModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="orderForm">
+                <input type="hidden" id="orderItemId" name="item_id">
+                
+                <div class="form-group">
+                    <label>Dish</label>
+                    <input type="text" id="orderItemName" class="form-input" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Price per item</label>
+                    <input type="text" id="orderItemPrice" class="form-input" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="quantity">Quantity</label>
+                    <input type="number" id="quantity" name="quantity" value="1" min="1" max="10" 
+                           class="form-input" onchange="updateTotal()">
+                </div>
+
+                <div class="form-group">
+                    <label>Total Amount</label>
+                    <input type="text" id="totalAmount" class="form-input" readonly>
+                </div>
+
+                <hr>
+
+                <div class="form-group">
+                    <label for="customerName">Your Name *</label>
+                    <input type="text" id="customerName" name="name" required 
+                           class="form-input" placeholder="Enter your name">
+                </div>
+
+                <div class="form-group">
+                    <label for="customerPhone">Phone Number *</label>
+                    <input type="tel" id="customerPhone" name="phone" required 
+                           pattern="[0-9]{10}" class="form-input" placeholder="10 digit mobile number">
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Delivery Location *</label>
+                    <textarea id="location" name="location" required rows="3" 
+                              class="form-input" placeholder="Enter your complete delivery address"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="specialInstructions">Special Instructions (Optional)</label>
+                    <textarea id="specialInstructions" name="special_instructions" rows="2" 
+                              class="form-input" placeholder="Any specific requests?"></textarea>
+                </div>
+
+                <div id="orderMessage" class="message"></div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="submitOrderBtn">
+                    <span class="btn-text">Place Order</span>
+                    <span class="btn-loader" style="display: none;">Placing order...</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentItemPrice = 0;
+
+// Filter functionality
+document.querySelectorAll('.filter-btn-sm').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn-sm').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const filter = btn.getAttribute('data-filter');
+        document.querySelectorAll('.menu-item').forEach(item => {
+            if (filter === 'all' || item.getAttribute('data-type') === filter) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+});
+
+function openOrderModal(itemId, itemName, itemPrice) {
+    document.getElementById('orderItemId').value = itemId;
+    document.getElementById('orderItemName').value = itemName;
+    document.getElementById('orderItemPrice').value = '₹' + itemPrice;
+    currentItemPrice = parseFloat(itemPrice);
+    document.getElementById('quantity').value = 1;
+    updateTotal();
+    document.getElementById('orderModal').style.display = 'flex';
+    document.getElementById('orderMessage').textContent = '';
+    document.getElementById('orderMessage').className = 'message';
+}
+
+function closeOrderModal() {
+    document.getElementById('orderModal').style.display = 'none';
+    document.getElementById('orderForm').reset();
+}
+
+function updateTotal() {
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
+    const total = currentItemPrice * quantity;
+    document.getElementById('totalAmount').value = '₹' + total.toFixed(2);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('orderModal');
+    if (event.target === modal) {
+        closeOrderModal();
+    }
+}
+
+// Order form submission
+document.getElementById('orderForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const btn = document.getElementById('submitOrderBtn');
+    const btnText = btn.querySelector('.btn-text');
+    const btnLoader = btn.querySelector('.btn-loader');
+    const messageDiv = document.getElementById('orderMessage');
+    
+    const formData = {
+        item_id: document.getElementById('orderItemId').value,
+        quantity: parseInt(document.getElementById('quantity').value),
+        name: document.getElementById('customerName').value.trim(),
+        phone: document.getElementById('customerPhone').value.trim(),
+        location: document.getElementById('location').value.trim(),
+        special_instructions: document.getElementById('specialInstructions').value.trim()
+    };
+    
+    // Show loading
+    btn.disabled = true;
+    btnText.style.display = 'none';
+    btnLoader.style.display = 'inline';
+    
+    try {
+        const response = await fetch('/api/order/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            messageDiv.textContent = data.message;
+            messageDiv.className = 'message message-success';
+            setTimeout(() => {
+                closeOrderModal();
+                location.reload();
+            }, 2000);
+        } else {
+            messageDiv.textContent = data.error || 'Order failed. Please try again.';
+            messageDiv.className = 'message message-error';
+            btn.disabled = false;
+            btnText.style.display = 'inline';
+            btnLoader.style.display = 'none';
+        }
+    } catch (error) {
+        messageDiv.textContent = 'Network error. Please try again.';
+        messageDiv.className = 'message message-error';
+        btn.disabled = false;
+        btnText.style.display = 'inline';
+        btnLoader.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}
