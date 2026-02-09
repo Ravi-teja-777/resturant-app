@@ -11,7 +11,7 @@ import traceback
 from functools import wraps
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '9fA7KxQ2mL$eT8WZ@D#C6Y!HqR4bVJpNwS%aU'
+app.config['SECRET_KEY'] = 'ravi-teja-restaurant-secret-key-2024-secure'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # AWS Configuration
@@ -20,7 +20,7 @@ BUCKET_NAME = "ravi-teja-restaurant-bucket"
 USERS_TABLE = "restaurant-users"
 MENU_TABLE = "restaurant-menu"
 ORDERS_TABLE = "restaurant-orders"
-SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:940482422578:sns"  # Update with your ARN
+SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:YOUR_ACCOUNT_ID:restaurant-notifications"  # Update with your ARN
 
 # AWS clients
 s3 = boto3.client('s3', region_name=AWS_REGION)
@@ -349,6 +349,11 @@ def api_signup():
         email = data['email'].strip().lower()
         phone = data['phone'].strip()
         password = data['password']
+        role = data.get('role', 'user')  # Default to 'user' if not provided
+        
+        # Validate role
+        if role not in ['user', 'admin']:
+            return jsonify({'error': 'Invalid role. Must be user or admin'}), 400
         
         # Check if user exists
         response = users_table.get_item(Key={'username': username})
@@ -374,7 +379,7 @@ def api_signup():
                 'email': email,
                 'phone': phone,
                 'password': hashed_password,
-                'role': 'user',
+                'role': role,
                 'created_at': datetime.now().isoformat()
             }
         )
