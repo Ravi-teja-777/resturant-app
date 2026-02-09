@@ -45,6 +45,15 @@
                                placeholder="Re-enter your password" class="form-input">
                     </div>
 
+                    <div class="form-group">
+                        <label for="role">Account Type</label>
+                        <select id="role" name="role" required class="form-input">
+                            <option value="user">User (Customer)</option>
+                            <option value="admin">Admin (Restaurant Owner)</option>
+                        </select>
+                        <small class="form-hint">Select User for ordering food, Admin for managing restaurant</small>
+                    </div>
+
                     <div id="signupMessage" class="message"></div>
 
                     <button type="submit" class="btn btn-primary btn-block" id="signupBtn">
@@ -78,6 +87,7 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
     const phone = document.getElementById('phone').value.trim();
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirm_password').value;
+    const role = document.getElementById('role').value;
     
     // Validate
     if (password !== confirmPassword) {
@@ -107,7 +117,8 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
                 username: username,
                 email: email,
                 phone: phone,
-                password: password
+                password: password,
+                role: role
             })
         });
         
