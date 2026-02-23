@@ -20,7 +20,7 @@ BUCKET_NAME = "ravi-teja-restaurant-bucket"
 USERS_TABLE = "restaurant-users"
 MENU_TABLE = "restaurant-menu"
 ORDERS_TABLE = "restaurant-orders"
-SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:YOUR_ACCOUNT_ID:restaurant-notifications"  # Update with your ARN
+SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:940482422578:notification"  # Update with your ARN
 
 # AWS clients
 s3 = boto3.client('s3', region_name=AWS_REGION)
@@ -866,3 +866,4 @@ if __name__ == '__main__':
     print("="*60 + "\n")
     
     app.run(host='0.0.0.0', port=5000, debug=True)
+
